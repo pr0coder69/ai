@@ -4,41 +4,47 @@ const cors = require('cors');
 const path = require('path');
 
 const app = express();
-const PORT = process.env.PORT || 3000; // Render ang magbibigay ng PORT
+const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
-
-// I-serve ang static files mula sa folder na 'public'
 app.use(express.static('public'));
 
 app.post('/api/chat', async (req, res) => {
     const { prompt } = req.body;
-
-    if (!prompt) {
-        return res.status(400).json({ error: 'Prompt is required' });
-    }
 
     try {
         const response = await axios.get(`https://api-library-kohi.onrender.com/api/deepseek`, {
             params: { prompt: prompt }
         });
 
-        // I-adjust natin ito base sa standard response ng API
-        const aiMessage = response.data.result || response.data.content || "No response from AI.";
-        res.json({ response: aiMessage });
+        // DEBUG: Makikita mo ito sa Render Logs para malaman ang format ng API
+        console.log("API Response Data:", response.data);
+
+        // Sinusubukan nating kunin ang text sa iba't ibang posibleng pangalan
+        const aiMessage = 
+            response.data.result || 
+            response.data.response || 
+            response.data.content || 
+            response.data.data ||
+            (typeof response.data === 'string' ? response.data : null);
+
+        if (aiMessage) {
+            res.json({ response: aiMessage });
+        } else {
+            res.json({ response: "Pasensya na, rumesponde ang API pero walang laman ang text." });
+        }
 
     } catch (error) {
-        console.error('Error:', error.message);
-        res.status(500).json({ error: 'Failed to fetch AI response' });
+        console.error('Error details:', error.response ? error.response.data : error.message);
+        res.status(500).json({ response: "Hindi makakonekta sa AI server sa ngayon." });
     }
 });
 
-// Lahat ng ibang request ay ibabalik sa index.html
-app.get('*', (col, res) => {
+app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`Zynex Server active on port ${PORT}`);
 });
