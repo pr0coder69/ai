@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zynex AI | Official</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#0b0e14] text-gray-200 min-h-screen flex flex-col">
+
+    <nav class="border-b border-gray-800 p-4 bg-[#0f121a] sticky top-0 z-10">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent italic">ZYNEX AI</h1>
+            <div class="flex items-center gap-2">
+                <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span class="text-xs text-gray-400 uppercase tracking-widest">Active System</span>
+            </div>
+        </div>
+    </nav>
+
+    <main id="chat-container" class="flex-1 max-w-4xl w-full mx-auto p-4 overflow-y-auto space-y-6 pb-32">
+        <div class="flex justify-start">
+            <div class="bg-gray-800/50 border border-gray-700 p-4 rounded-2xl rounded-tl-none max-w-[85%]">
+                Greetings. I am **Zynex**. How can I assist your operations today?
+            </div>
+        </div>
+    </main>
+
+    <div class="fixed bottom-0 left-0 w-full bg-[#0b0e14]/80 backdrop-blur-md p-4">
+        <form id="chat-form" class="max-w-4xl mx-auto relative">
+            <input type="text" id="user-input" autocomplete="off"
+                class="w-full bg-gray-800 border border-gray-700 text-white rounded-xl py-4 pl-5 pr-16 focus:outline-none focus:border-cyan-500 transition-all shadow-2xl" 
+                placeholder="Type your command...">
+            <button type="submit" 
+                class="absolute right-2 top-2 bottom-2 bg-cyan-600 hover:bg-cyan-500 text-white px-4 rounded-lg transition-colors font-bold">
+                SEND
+            </button>
+        </form>
+    </div>
+
+    <script>
+        const form = document.getElementById('chat-form');
+        const input = document.getElementById('user-input');
+        const container = document.getElementById('chat-container');
+
+        function addMessage(role, text) {
+            const div = document.createElement('div');
+            div.className = role === 'user' ? 'flex justify-end' : 'flex justify-start';
+            
+            const content = role === 'user' 
+                ? `<div class="bg-cyan-700 p-4 rounded-2xl rounded-tr-none max-w-[85%] shadow-lg">${text}</div>`
+                : `<div class="bg-gray-800/50 border border-gray-700 p-4 rounded-2xl rounded-tl-none max-w-[85%] shadow-md">${text}</div>`;
+            
+            div.innerHTML = content;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const msg = input.value.trim();
+            if (!msg) return;
+
+            addMessage('user', msg);
+            input.value = '';
+
+            // AI thinking placeholder
+            const thinkingDiv = document.createElement('div');
+            thinkingDiv.className = 'flex justify-start';
+            thinkingDiv.innerHTML = `<div id="loader" class="text-gray-500 italic text-sm">Zynex is processing...</div>`;
+            container.appendChild(thinkingDiv);
+
+            try {
+                // Pansinin: '/api/chat' lang ang gamit natin (relative path)
+                const res = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: msg })
+                });
+                const data = await res.json();
+                
+                thinkingDiv.remove();
+                addMessage('ai', data.response);
+            } catch (err) {
+                thinkingDiv.innerHTML = `<div class="text-red-400">Connection Failed. Check backend.</div>`;
+            }
+        });
+    </script>
+</body>
+  </html>
